@@ -1,0 +1,27 @@
+# Development-only dependencies and scripts
+node_modules/
+*.mdx
+*.mdd
+*.dict
+*.idx
+*.ifo
+
+# Local extraction and validation helpers
+/app*.html
+/check_*.js
+/expand_*.js
+/import_*.js
+/probe_*.js
+/probe_*.py
+/replace_*.js
+/scan-*.ps1
+/memory-chart.js
+/package.json
+/package-lock.json
+/index.html
+/manifest.webmanifest
+/sw.js
+/vocabulary-import.js
+
+# Git metadata
+.DS_Store

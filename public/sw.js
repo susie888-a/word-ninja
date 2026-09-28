@@ -1,0 +1,1 @@
+const C='word-ninja-v21';self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(x=>x.addAll(['./','./app-v10.html','./app-v8.html','./vocabulary-import.js','./manifest.webmanifest']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
