@@ -25,3 +25,6 @@ node_modules/
 
 # Git metadata
 .DS_Store
+
+# Unverified local previews and extraction experiments
+.local/

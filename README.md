@@ -1,5 +1,11 @@
 # 单词忍者
 
+## 项目维护
+
+当前已验证的 v16 发布链路、目录职责和本地学习数据说明见
+[架构说明](docs/ARCHITECTURE.md)。每次内容更新请按
+[更新流程](docs/UPDATE_WORKFLOW.md) 进行预览、验证和发布。
+
 一款为 iPhone Safari 设计的离线英语单词背诵 PWA。
 
 打开网站后，在 Safari 的分享菜单中选择“添加到主屏幕”，即可像 App 一样使用。
