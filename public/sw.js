@@ -1,4 +1,4 @@
-const C='word-ninja-v40';
+const C='word-ninja-v44';
 const A=['./','./index.html','./app-v16-preview-server.html','./app-v16.html','./app-v15.html','./app-v11.html','./vocabulary-import.js','./v16-preview-enhancements.js','./v16-preview-exam-mode.js','./manifest.webmanifest'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(A)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x.startsWith('word-ninja-')&&x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim())));

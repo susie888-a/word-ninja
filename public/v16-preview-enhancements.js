@@ -17,6 +17,28 @@
     vocabularyNotice(true);
     loadAndSyncState();
     w.ensureNinjaState=normalizeState;
+    /* A profile change is intentional: keep it in the existing local-only state,
+       but let the learner explicitly confirm the new nickname. */
+    function installNicknameSave(){
+      var input=d.getElementById('nickname');
+      if(!input||d.getElementById('saveNickname'))return;
+      input.onchange=null;
+      input.onkeydown=function(event){if(event.key==='Enter'){event.preventDefault();d.getElementById('saveNickname').click()}};
+      var saveName=d.createElement('button');
+      saveName.type='button';saveName.id='saveNickname';saveName.className='save-nickname';saveName.textContent='保存昵称';
+      saveName.onclick=function(){
+        var next=(input.value||'').trim().slice(0,16)||'忍者';
+        if(typeof w.setName==='function')w.setName(next);
+        else{var profile=loadAndSyncState();profile.name=next;w.localStorage.setItem('ninja11',JSON.stringify(profile))}
+        input.value=next;
+        if(typeof w.toast==='function')w.toast('昵称已保存到本机');
+      };
+      input.parentNode.appendChild(saveName);
+      var nicknameStyle=d.createElement('style');
+      nicknameStyle.textContent='.save-nickname{width:100%;margin-top:9px;border:0;border-radius:11px;padding:10px 12px;background:#17324d;color:#fff;font-weight:800;font-size:14px}.save-nickname:active{transform:scale(.99)}';
+      d.head.appendChild(nicknameStyle);
+    }
+    installNicknameSave();
     if(w.__v16PreviewReady&&d.getElementById('quiz')&&bottom.querySelector('[data-v="quiz"]')){return}
     var style=d.createElement('style');style.textContent='.quizmode{margin-top:10px}.quizmode .quiz-title{font-size:15px;color:#17324d;margin:0 0 8px}.quizmode .quiz-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.quizmode .quiz-tabs button,.quizmode .quiz-answer{border:1px solid #e8e4da;border-radius:13px;background:#fffdf8;color:#17324d;padding:12px;font-weight:700}.quizmode .quiz-answer{width:100%;margin-top:8px;text-align:left}.quizmode .quiz-answer.right{background:#e9f5ef;border-color:#3e9b76}.quizmode .quiz-answer.wrong{background:#fff0e8;border-color:#ff865b}.quizmode .quiz-prompt{font-size:17px;line-height:1.45;text-align:center;padding:8px 4px;color:#17324d}.quizmode input{width:100%;border:1px solid #e8e4da;border-radius:12px;padding:12px;font-size:18px;text-align:center}.quizmode #quizSubmit,#examSubmit{width:100%;margin-top:11px;border-radius:999px;padding:14px 18px;font-size:18px;letter-spacing:.04em}.quiz-feedback{min-height:20px;text-align:center;color:#3e9b76;font-weight:700;margin-top:7px}#learn .feedback-buttons{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}#learn .feedback-buttons button{padding:14px 4px;font-size:13px}#learn .feedback-buttons .fuzzy{background:#edf3f7;color:#17324d}';d.head.appendChild(style);
     var quiz=d.createElement('section');quiz.id='quiz';quiz.className='view';quiz.innerHTML='<div class="head"><h2>小测验道场</h2><span class="pill">提取练习</span></div><div class="card quizmode"><p class="quiz-title">换一种方式记住，才能真正会用。</p><div class="quiz-tabs"><button data-mode="cn">中译英选择</button><button data-mode="audio">听音选词</button><button data-mode="spell">拼写填空</button><button data-mode="example">读定义猜词</button></div><div id="quizPrompt" class="quiz-prompt"></div><div id="quizAnswers"></div><div id="quizFeedback" class="quiz-feedback"></div></div><div class="note">答对会延长下一次复习间隔；答错会缩短间隔，并在队列中优先出现。</div>';main.appendChild(quiz);
@@ -59,6 +81,23 @@
     w.continueFromDetail=function(){var item=w.cur&&w.cur(),feedback=w.__pendingFeedback||'forgot';if(!item)return;w.__skipNextWord=item[0];addProgress(feedback,item);w.__pendingFeedback=null;var x=state();if(feedback!=='forgot'&&x.dayDone>=x.daily){w.show('trophy')}else{w.show('learn')}w.draw()};
     var baseDraw=w.draw;w.draw=function(){var r=baseDraw.apply(this,arguments),item=w.cur&&w.cur();if(item)renderCard(item);return r};
     w.draw();
+    /* The bilingual Oxford source stores definition, Chinese sense, example and
+       example translation together. Render that exact bundle instead of pairing
+       independent arrays by index. */
+    renderDetail=function(item,feedback){
+      var ds=details(item),ms=meanings(item),dw=d.getElementById('dw'),dp=d.getElementById('dp'),de=d.getElementById('de'),dd=d.getElementById('dd'),ox=d.getElementById('oxford');
+      if(!item||!dw)return;
+      dw.textContent=item[0];dp.textContent=item[1]||'\u97f3\u6807\u5f85\u8865\u5145';
+      var first=ds[0]||{},mainExample=first.example||item[5]||'\u6682\u65e0\u82f1\u6587\u4f8b\u53e5',mainTranslation=first.translation||item[8]||'';
+      de.innerHTML='<b>\u5355\u8bcd\u4f8b\u53e5</b><br>'+esc(mainExample)+(mainTranslation?'<br><span style="color:#71808d;font-size:13px">'+esc(mainTranslation)+'</span>':'');
+      dd.innerHTML='<div class="meaning-inline">'+ds.slice(0,3).map(function(x,i){return '<span><b>'+esc(x.pos||'meaning')+'</b>\uff1a'+esc(x.meaning||ms[i]||ms[0]||'\u6682\u65e0\u4e2d\u6587\u91ca\u4e49')+'</span>'}).join('<i>\u00b7</i>')+'</div>';
+      ox.className='oxford detail-explain';
+      ox.innerHTML='<label>\u725b\u6d25\u9ad8\u9636\uff1a\u82f1\u6587\u5b9a\u4e49\u4e0e\u4f8b\u53e5</label>'+(ds.length?ds.slice(0,3).map(function(x,i){var meaning=x.meaning||ms[i]||ms[0]||'\u6682\u65e0\u4e2d\u6587\u91ca\u4e49';return '<div class="sense"><b>'+(i+1)+'. '+esc(x.pos||'meaning')+'\uff1a'+esc(meaning)+'</b><p>'+esc(x.definition)+'</p>'+(x.example?'<em>Example: '+esc(x.example)+'</em>':'')+(x.translation?'<span class="sense-translation">'+esc(x.translation)+'</span>':'')+'</div>'}).join(''):'<div class="sense"><p>'+esc(definition(item))+'</p></div>');
+      var note=d.getElementById('detailFeedback');if(!note){note=d.createElement('div');note.id='detailFeedback';note.className='detail-feedback';ox.parentNode.insertBefore(note,ox.nextSibling)}
+      note.textContent=feedback==='forgot'?'\u5148\u770b\u61c2\u8fd9\u4e2a\u8bcd\uff0c\u4e0b\u4e00\u6b21\u4f1a\u66f4\u65e9\u518d\u9047\u5230\u5b83\u3002':feedback==='fuzzy'?'\u5df2\u8bb0\u5f55\u4e3a\u201c\u6a21\u7cca\u8bb0\u5f97\u201d\uff0c\u8bf7\u770b\u5b8c\u91ca\u4e49\u540e\u7ee7\u7eed\u3002':'\u5df2\u8bb0\u5f55\u4e3a\u201c\u5f88\u719f\u201d\uff0c\u8bf7\u770b\u5b8c\u91ca\u4e49\u540e\u7ee7\u7eed\u3002';
+      var next=d.querySelector('#detail .primary');if(next){next.textContent='\u770b\u5b8c\u91ca\u4e49\uff0c\u7ee7\u7eed\u4e0b\u4e00\u4e2a';next.onclick=function(){w.continueFromDetail()}}
+    };
+    var exactSenseStyle=d.createElement('style');exactSenseStyle.textContent='.sense-translation{display:block;margin-top:4px;color:#71808d;font:13px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;font-style:normal}';d.head.appendChild(exactSenseStyle);
     w.__v16PreviewReady=true;
   }
   var examScript=document.createElement('script');examScript.src='v16-preview-exam-mode.js';document.head.appendChild(examScript);
